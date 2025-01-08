@@ -10,14 +10,12 @@ const blogSchema = new Schema({
         type: String
     },
     description: {
-        type: text
+        type: string
     },
     image: {
-        type: String
+        type: string
     }
-    
 })
 
 const Blog = mongoose.model('Blog', blogSchema)
-
 module.exports = Blog
