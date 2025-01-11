@@ -5,6 +5,7 @@ const Blog = require('./model/blogModel')
 const app = express()
 const {multer, storage} = require('./middleware/multerConfig')
 const upload = multer({storage : storage})
+const fs = require('fs')
 
 app.use(express.json())
 
@@ -22,10 +23,10 @@ app.get('/', (req, res) =>{
 })
 
     app.post('/blog',upload.single('image'), async(req, res) =>{
-
     //console.log(req.body) //fetch data from frontend to the backend but not put in database using api
     const {title, subtitle, description} = req.body
     const filename = req.file.filename
+    console.log(req.file)
 
     if(!title || !subtitle || !description){
         return res.status(400).json({
@@ -66,6 +67,8 @@ app.get('/blog', async(req, res) =>{
 })
 app.use(express.static('./storage'))
 
+//single blog fetched
+
 app.get('/blog/:id', async(req, res) =>{
     const id = req.params.id
     const blog = await Blog.findById(id)
@@ -82,5 +85,60 @@ app.get('/blog/:id', async(req, res) =>{
     }
 
 })
+
+//delete blog
+
+app.delete('/blog/:id', async(req, res) =>{
+    const id = req.params.id
+    const blog = await Blog.findById(id)
+    const imageName = blog.image
+
+    fs.unlink(`storage/${imageName}`, (err) =>{
+        if(err){
+            console.log(err)
+        }else{
+            console.log("file deleted successfully")
+        }
+    })
+
+    await Blog.findByIdAndDelete(id)
+    res.status(200).json({
+        message: "Delete blog successfully"
+    })
+})
+// update book data
+
+app.patch('/blog/:id',upload.single('image'), async(req, res) =>{
+    const id = req.params.id
+    const {title, subtitle, description} = req.body
+    let imageName;
+
+    //update with image
+    if(req.file){
+        imageName = req.file.filename
+        const blog = await Blog.findById(id)
+        const oldImageName = blog.image
+
+        fs.unlink(`storage/${oldImageName}`, (err) =>{
+            if(err){
+                console.log(err)
+            }else{
+                console.log("file deleted successfully")
+            }
+        })
+    }
+
+
+    //just data update not image
+    await Blog.findByIdAndUpdate(id,{
+        title : title,
+        subtitle: subtitle,
+        description: description,
+    })
+    res.status(200).json({
+        message: "blog updated succesfully"
+    })
+})
+
 
 //process.env.PORT
